@@ -1,0 +1,31 @@
+name: CLI packaging
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  packaging:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check runtime and locked manifest
+        run: |
+          php --version
+          composer --version
+          composer validate --strict
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer test
+      - name: Build and verify standalone archive
+        run: |
+          composer build
+          php tests/cli.php "$PWD/build/laravel-setup.phar"
+          php tests/package.php
+          isolated="$(mktemp -d)/standalone app"
+          mkdir -p "$isolated"
+          cp build/laravel-setup.phar "$isolated/utility.phar"
+          php tests/cli.php "$isolated/utility.phar"
+      - name: Check repeated-build identity
+        run: |
+          cp build/laravel-setup.phar /tmp/first-build.phar
+          composer build
+          cmp /tmp/first-build.phar build/laravel-setup.phar

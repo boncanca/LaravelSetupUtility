@@ -1,0 +1,17 @@
+{
+  "main": "bin/laravel-setup",
+  "output": "build/laravel-setup.phar",
+  "alias": "laravel-setup.phar",
+  "check-requirements": true,
+  "exclude-dev-files": true,
+  "dump-autoload": true,
+  "timestamp": "2026-11-06T00:00:00+00:00",
+  "blacklist": [
+    "tests",
+    "docs",
+    ".github",
+    "AGENTS.md",
+    "README.md",
+    "build"
+  ]
+}
