@@ -35,7 +35,7 @@ final class Resolver
         );
         foreach ($plan['packages'] as $package) {
             $type = $package['dependency_type'];
-            $stagedManifest->{$type} ??= new \\stdClass();
+            $stagedManifest->{$type} ??= new \stdClass();
             $stagedManifest->{$type}->{$package['name']} = $package['constraint'];
         }
         $temporary = realpath(sys_get_temp_dir());
