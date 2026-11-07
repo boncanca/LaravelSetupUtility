@@ -4,16 +4,19 @@ A standalone, disposable Laravel ecosystem configurator.
 
 ## Current increment
 
-The standalone CLI supports read-only manifest inspection and deterministic engineering package proposals. **Creating and configuring Laravel applications is not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+The standalone CLI supports read-only manifest inspection, deterministic engineering package proposals and isolated Composer resolution. **Creating and configuring Laravel applications is not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
 
 Run `php bin/laravel-setup inspect /path/to/project` to print the canonical project root and PHP/Laravel constraints declared in `composer.json` as JSON. Inspection reads only that manifest; it does not execute application code or report installed versions.
 
 ```sh
 php bin/laravel-setup plan /path/to/project --recipe=pint --recipe=phpstan > /outside/project/plan.json
 php bin/laravel-setup check-plan /path/to/project /outside/project/plan.json
+php bin/laravel-setup resolve-plan /path/to/project /outside/project/plan.json
 ```
 
-Planning supports only the bundled stable `pint` and `phpstan` recipe policies for existing Laravel projects. It checks declared constraint intersections and the current PHP runtime, and hashes Composer inputs. Dependency solving and recipe integration remain unverified, so every proposal has `apply_ready: false`. `check-plan` detects mismatches against a recomputed canonical proposal; it does not authenticate approval or establish installability. Save redirected output outside the project to keep the target unchanged.
+Planning supports only the bundled stable `pint` and `phpstan` recipe policies for existing Laravel projects. It checks declared constraint intersections and the current PHP runtime, and hashes Composer inputs. `check-plan` detects mismatches against a recomputed canonical proposal; it does not authenticate approval or establish installability. Save redirected output outside the project to keep the target unchanged.
+
+`resolve-plan` requires Composer in PATH and resolves dependencies in disposable private staging, using public Packagist without plugins, scripts or installation. It reports concrete package versions and a lock hash after checking target drift again. Custom repositories, platform overrides, custom Composer paths and unknown manifest/config settings are rejected. Solver diagnostics are redacted. The generated lock is deleted with staging: the summary is evidence, not a replayable install artifact. Recipe integration remains unverified and all outputs keep `apply_ready: false`.
 
 ## Development
 
