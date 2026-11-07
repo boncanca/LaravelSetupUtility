@@ -12,6 +12,35 @@ use UnexpectedValueException;
 
 final class Planner
 {
+    public function validate(string $path, array $saved): void
+    {
+        if (!is_array($saved['recipes'] ?? null) || !is_string($saved['catalog_channel'] ?? null)
+            || $saved !== $this->create($path, $saved['recipes'], $saved['catalog_channel'])) {
+            throw new RuntimeException('Plan does not match current inputs, runtime or catalog. Replan before proceeding.');
+        }
+    }
+
+    public static function readPlan(string $file): array
+    {
+        if (!is_file($file)) {
+            throw new RuntimeException('Plan file is missing or is not a file.');
+        }
+        $contents = @file_get_contents($file, false, null, 0, 1048577);
+        if ($contents === false || strlen($contents) > 1048576) {
+            throw new RuntimeException('Plan file is unreadable or exceeds 1 MiB.');
+        }
+        try {
+            $saved = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new RuntimeException('Plan JSON is invalid.');
+        }
+        if (!is_array($saved)) {
+            throw new RuntimeException('Plan format is unsupported.');
+        }
+
+        return $saved;
+    }
+
     private const CATALOG = [
         'phpstan' => ['version' => 1, 'php' => '^8.3', 'laravel' => '^12.0 || ^13.0', 'package' => 'phpstan/phpstan', 'constraint' => '^2.1'],
         'pint' => ['version' => 1, 'php' => '^8.3', 'laravel' => '^12.0 || ^13.0', 'package' => 'laravel/pint', 'constraint' => '^1.24'],

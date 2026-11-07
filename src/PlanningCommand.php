@@ -37,22 +37,8 @@ final class PlanningCommand extends Command
         try {
             $planner = new Planner();
             if ($this->check) {
-                $file = $input->getArgument('plan-file');
-                if (!is_file($file)) {
-                    throw new RuntimeException('Plan file is missing or is not a file.');
-                }
-                $contents = @file_get_contents($file, false, null, 0, 1048577);
-                if ($contents === false || strlen($contents) > 1048576) {
-                    throw new RuntimeException('Plan file is unreadable or exceeds 1 MiB.');
-                }
-                $saved = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
-                if (!is_array($saved) || !is_array($saved['recipes'] ?? null) || !is_string($saved['catalog_channel'] ?? null)) {
-                    throw new RuntimeException('Plan format is unsupported.');
-                }
-                $current = $planner->create($input->getArgument('path'), $saved['recipes'], $saved['catalog_channel']);
-                if ($saved !== $current) {
-                    throw new RuntimeException('Plan does not match current inputs, runtime or catalog. Replan before proceeding.');
-                }
+                $saved = Planner::readPlan($input->getArgument('plan-file'));
+                $planner->validate($input->getArgument('path'), $saved);
                 $result = ['valid' => true];
             } else {
                 $result = $planner->create($input->getArgument('path'), $input->getOption('recipe'), $input->getOption('channel'));

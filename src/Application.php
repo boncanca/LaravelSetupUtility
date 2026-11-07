@@ -14,5 +14,6 @@ final class Application extends ConsoleApplication
         $this->add(new InspectCommand());
         $this->add(new PlanningCommand());
         $this->add(new PlanningCommand(check: true));
+        $this->add(new ResolveCommand());
     }
 }

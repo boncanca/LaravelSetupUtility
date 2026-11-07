@@ -28,14 +28,14 @@ final class ProjectSnapshot
             throw new RuntimeException('Composer manifest must declare PHP and laravel/framework string constraints in require.');
         }
         $inputs = ['composer.json' => hash('sha256', $contents)];
+        $lock = null;
         if ($includeLock) {
             $lockPath = $root.'/composer.lock';
-            $inputs['composer.lock'] = file_exists($lockPath) || is_link($lockPath)
-                ? hash('sha256', self::readFile($root, 'composer.lock', 16777216))
-                : null;
+            $lock = file_exists($lockPath) || is_link($lockPath) ? self::readFile($root, 'composer.lock', 16777216) : null;
+            $inputs['composer.lock'] = $lock === null ? null : hash('sha256', $lock);
         }
 
-        return ['root' => $root, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'manifest' => $data, 'inputs' => $inputs];
+        return ['root' => $root, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'manifest' => $data, 'inputs' => $inputs, 'lock_contents' => $lock];
     }
 
     private static function readFile(string $root, string $name, int $limit): string
