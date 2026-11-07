@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM composer:2.8.12@sha256:5248900ab8b5f7f880c2d62180e40960cd87f60149ec9a1abfd62ac72a02577c AS composer
+FROM composer:2.11.1@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0 AS composer
 FROM php:8.4.14-cli-alpine3.22@sha256:69ee19e1bee51ad7d5b5e44ceaa317cc7904b22211de4fb0c85284ffec123341
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 RUN --mount=type=secret,id=proxy_ca,required=true \

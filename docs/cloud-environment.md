@@ -70,11 +70,17 @@ silently reformatted or claimed to satisfy a new repository-wide rule set.
 ## Qualified session runtime (2026-11-07)
 
 The built image is
-`sha256:7c97f180e7809b1311028bbdb25a59bd5881cfc47595a536c2fb3317bc9332b5`:
-PHP 8.4.14, Composer 2.8.12, GNU mv 9.7, pcntl and the required Laravel
+`sha256:33d9713d5c0c94a3ee31eaa7e34637c26f24efdff76078eece6456799348eaf6`:
+PHP 8.4.14, Composer 2.11.1, GNU mv 9.7, pcntl and the required Laravel
 extensions. `infrastructure/cloud/qualified-runtime.txt` records its extensions
 and installed Alpine packages. Archive baseline `74bb584` passed all six
 existing suites, strict manifest validation, platform checks, PHAR build and
 contracts, archive exclusions, and repeated-build byte comparison inside this
 image before create implementation was verified. This does not qualify all
 PHP 8.3+ versions or other operating systems.
+
+Composer 2.11.1 replaces the initial 2.8.12 pin after GitHub setup reported
+[GHSA-f9f8-rm49-7jv2](https://github.com/advisories/GHSA-f9f8-rm49-7jv2).
+The affected token handling is fixed from Composer 2.9.8. Installation child
+processes still receive no caller credentials; the version update supplements
+that isolation. Earlier baseline logs using 2.8.12 remain historical evidence.

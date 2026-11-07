@@ -73,9 +73,23 @@ final class Creator
             // Qualify no-clobber semantics on this filesystem before downloading anything.
             mkdir($stage.'/probe-source');
             mkdir($stage.'/probe-target');
-            $this->run([$mover, '--no-clobber', '--no-target-directory', $stage.'/probe-source', $stage.'/probe-target'], $stage, $environment, 'Publication preflight');
-            if (! is_dir($stage.'/probe-source') || ! is_dir($stage.'/probe-target')) {
-                throw new RuntimeException('Atomic no-clobber directory publication is unavailable.');
+            $sourceIdentity = lstat($stage.'/probe-source');
+            $targetIdentity = lstat($stage.'/probe-target');
+            // GNU mv 9.2-9.4 reports status 1 for an ordinary -n skip.
+            $this->run([$mover, '--no-clobber', '--no-target-directory', $stage.'/probe-source', $stage.'/probe-target'], $stage, $environment, 'Publication preflight', allowedExitCodes: [0, 1]);
+            clearstatcache();
+            foreach ([$stage.'/probe-source' => $sourceIdentity, $stage.'/probe-target' => $targetIdentity] as $probe => $expected) {
+                $actual = lstat($probe);
+                if (is_link($probe) || $actual === false || $actual['dev'] !== $expected['dev'] || $actual['ino'] !== $expected['ino']) {
+                    throw new RuntimeException('Atomic no-clobber directory publication is unavailable.');
+                }
+            }
+            // A missing/broken mover must not pass merely by leaving both probes untouched.
+            $this->run([$mover, '--no-clobber', '--no-target-directory', $stage.'/probe-source', $stage.'/probe-published'], $stage, $environment, 'Publication positive preflight');
+            clearstatcache();
+            $publishedProbe = lstat($stage.'/probe-published');
+            if (file_exists($stage.'/probe-source') || is_link($stage.'/probe-published') || $publishedProbe === false || $publishedProbe['dev'] !== $sourceIdentity['dev'] || $publishedProbe['ino'] !== $sourceIdentity['ino']) {
+                throw new RuntimeException('Atomic directory publication positive preflight failed.');
             }
             $this->run([...$composerCommand, 'create-project', 'laravel/laravel', 'app', self::SKELETON, '--prefer-dist', '--no-interaction', '--no-progress', '--no-ansi', '--no-scripts', '--no-plugins'], $stage, $environment, 'Composer installation');
             $app = $stage.'/app';
@@ -107,8 +121,9 @@ final class Creator
             foreach (['SESSION_DRIVER' => 'file', 'CACHE_STORE' => 'file', 'QUEUE_CONNECTION' => 'sync'] as $key => $value) {
                 $env = preg_replace('/^'.$key.'=.*$/m', $key.'='.$value, $env);
             }
-            file_put_contents($app.'/.env', $env);
-            chmod($app.'/.env', 0600);
+            if (file_put_contents($app.'/.env', $env) !== strlen($env) || ! chmod($app.'/.env', 0600)) {
+                throw new RuntimeException('Private application environment could not be written.');
+            }
             $this->run([PHP_BINARY, 'artisan', 'key:generate', '--force', '--no-interaction', '--no-ansi'], $app, $environment, 'Application key generation');
             $this->run([PHP_BINARY, 'artisan', 'package:discover', '--no-interaction', '--no-ansi'], $app, $environment, 'Laravel package discovery');
             $this->run([PHP_BINARY, '-r', self::smokeCode()], $app, $environment, 'Laravel HTTP smoke');
@@ -202,8 +217,9 @@ final class Creator
     /**
      * @param  list<string>  $command
      * @param  array<string, string|false>  $environment
+     * @param  list<int>  $allowedExitCodes
      */
-    private function run(array $command, string $directory, array $environment, string $phase, bool $capture = false, bool $cancellable = true): string
+    private function run(array $command, string $directory, array $environment, string $phase, bool $capture = false, bool $cancellable = true, array $allowedExitCodes = [0]): string
     {
         if (! str_starts_with($command[0], '/') || ! is_executable($command[0])) {
             throw new RuntimeException($phase.' requires a trusted absolute executable.');
@@ -213,9 +229,11 @@ final class Creator
 if (posix_setsid() !== getmypid()) { exit(125); }
 $handle = fopen($argv[1], 'x');
 if ($handle === false) { exit(125); }
-chmod($argv[1], 0600);
-fwrite($handle, (string) getmypid());
-fclose($handle);
+if (!chmod($argv[1], 0600)) { exit(125); }
+$pid = (string) getmypid();
+$written = fwrite($handle, $pid);
+$closed = fclose($handle);
+if ($written !== strlen($pid) || !$closed) { exit(125); }
 pcntl_exec($argv[2], array_slice($argv, 3));
 exit(126);
 PHP;
@@ -240,7 +258,7 @@ PHP;
                 usleep(50000);
             }
             $group ??= $this->processGroup($handshake, $leader);
-            if (! $process->isSuccessful() || $group === null) {
+            if (! in_array($process->getExitCode(), $allowedExitCodes, true) || $group === null) {
                 throw new RuntimeException('Unsuccessful process.');
             }
 

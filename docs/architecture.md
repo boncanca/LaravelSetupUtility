@@ -10,7 +10,7 @@ Box is development-only. It includes production dependencies using Composer meta
 
 Initial qualified environment: Ubuntu 24.04, PHP 8.3.6. PHP 8.3+ is required by the manifest; other operating systems and PHP versions remain unqualified until tested. Native Windows and WSL must be qualified separately.
 
-Running the PHAR requires PHP CLI with Phar and iconv. Building additionally needs tokenizer, mbstring and the locked build dependencies' required extensions. Composer needs HTTPS/decompression support; enable OpenSSL, curl and zlib or provide equivalent Composer-supported transport/extraction tools. Build with `phar.readonly=0`. Use Composer 2; this increment was tested with 2.8.12. Commit and install from composer.lock; do not update dependencies during reproduction.
+Running the PHAR requires PHP CLI with Phar and iconv. Building additionally needs tokenizer, mbstring and the locked build dependencies' required extensions. Composer needs HTTPS/decompression support; enable OpenSSL, curl and zlib or provide equivalent Composer-supported transport/extraction tools. Build with `phar.readonly=0`. Use Composer 2; the historical packaging baseline used 2.8.12. Current cloud/CI use the patched Composer version pinned in [cloud-environment.md](cloud-environment.md) and the workflow. Commit and install from composer.lock; do not update dependencies during reproduction.
 
 ```
 composer install --no-interaction

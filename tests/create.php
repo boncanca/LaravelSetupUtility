@@ -6,8 +6,15 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use LaravelSetup\Creator;
 
-$root = sys_get_temp_dir().'/create behavior '.bin2hex(random_bytes(6));
+$temporary = realpath(getenv('TMPDIR') ?: '/tmp');
+$root = $temporary.'/create behavior '.bin2hex(random_bytes(6));
 mkdir($root, 0700);
+// Set before the first sys_get_temp_dir() call; independent test processes stay isolated.
+putenv('TMPDIR='.$root);
+$_ENV['TMPDIR'] = $root;
+if (sys_get_temp_dir() !== $root) {
+    throw new RuntimeException('Create tests require a fresh isolated temporary directory.');
+}
 $fake = $root.'/composer.php';
 $source = <<<'FAKE'
 <?php

@@ -3,7 +3,9 @@ Copyright (c) The PHP Group
 Built by https://github.com/docker-library/php
 Zend Engine v4.4.14, Copyright (c) Zend Technologies
     with Zend OPcache v8.4.14, Copyright (c), by Zend Technologies
-Composer version 2.8.12 2025-09-19 13:41:59
+Composer version 2.11.1 2026-10-30 14:52:10
+PHP version 8.4.14 (/usr/local/bin/php)
+Run the "diagnose" command to get more detailed diagnostics output.
 mv (GNU coreutils) 9.7
 [PHP Modules]
 Core
@@ -45,6 +47,8 @@ zlib
 [Zend Modules]
 Zend OPcache
 
+WARNING: opening from cache https://dl-cdn.alpinelinux.org/alpine/v3.22/main: No such file or directory
+WARNING: opening from cache https://dl-cdn.alpinelinux.org/alpine/v3.22/community: No such file or directory
 acl-libs-2.3.2-r1
 alpine-baselayout-3.7.0-r0
 alpine-baselayout-data-3.7.0-r0

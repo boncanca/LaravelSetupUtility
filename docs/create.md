@@ -31,7 +31,7 @@ Child processes receive a small environment allowlist for trusted executable pat
 
 Every external command runs in a private process session created by PHP `posix_setsid`, with a private exclusive PID handshake before `pcntl_exec`. Timeout, SIGINT and SIGTERM cancellation terminate the entire session (TERM then KILL), including surviving extraction children, before temporary cleanup. Each command has a finite timeout (ten minutes by default). SIGKILL, machine loss and filesystem failures cannot guarantee cleanup; inspect external temporary storage after those events.
 
-Only a verified application is published. Parent identity is rechecked, and GNU `mv --no-clobber --no-target-directory` performs same-device publication; the source must disappear and the destination must retain the staged directory's device/inode. GNU coreutils 9.1 uses `renameatu(..., RENAME_NOREPLACE)` in [src/mv.c](https://github.com/coreutils/coreutils/blob/v9.1/src/mv.c) and [src/copy.c](https://github.com/coreutils/coreutils/blob/v9.1/src/copy.c). Filesystem/kernel qualification is necessary because unsupported platforms may use a fallback. The preflight no-clobber probe additionally checks ordinary refusal semantics; it alone is not evidence of atomic race safety.
+Only a verified application is published. Parent identity is rechecked, and GNU `mv --no-clobber --no-target-directory` performs same-device publication; the source must disappear and the destination must retain the staged directory's device/inode. GNU coreutils 9.1 uses `renameatu(..., RENAME_NOREPLACE)` in [src/mv.c](https://github.com/coreutils/coreutils/blob/v9.1/src/mv.c) and [src/copy.c](https://github.com/coreutils/coreutils/blob/v9.1/src/copy.c). Filesystem/kernel qualification is necessary because unsupported platforms may use a fallback. The preflight no-clobber probe accepts the documented skip statuses 0 or 1 (GNU 9.2–9.4 returns 1), checks that both directory identities remain unchanged, then positively verifies an absent-target rename and its inode identity. Those probes alone are not evidence of atomic race safety.
 
 Cancellation is honored before publication. Once the verified rename begins, the command completes/reconciles publication rather than cancelling the commit point. A verified destination may therefore exist if the caller loses the process exactly during publication. Rerun always refuses that existing path. Existing user files and destinations are never deleted or overwritten; cleanup applies only to this invocation's private staging tree.
 
@@ -46,3 +46,14 @@ RUN_CREATE_INTEGRATION=1 php tests/create-real.php "$PWD/build/laravel-setup.pha
 ```
 
 The real integration harness boots both endpoints after publication, reruns both upstream example tests, verifies rerun preservation and scans for utility dependencies, staging paths and verification residue. It deletes only its own isolated fixture directory. GitHub CI runs this integration harness against the PHAR, along with source tests, packaging inspection, build reproducibility, PHPStan and Pint. Cloud wrapper usage is documented in [cloud-environment.md](cloud-environment.md); put environment assignments after the wrapper's `env` argument so they enter the container.
+
+The GNU no-clobber skip regression can also be reproduced locally without installing another coreutils version. This explicit fixture **models** the GNU 9.2–9.4 skip status with a wrapper and delegates positive moves to the included real GNU mover; it does not certify an actual 9.4 binary. CI's Ubuntu runner supplies the actual 9.4 coverage.
+
+```
+# Build the included cloud development image first (see cloud-environment.md).
+docker build -f infrastructure/quality/Dockerfile.mv-skip-one \
+    -t laravel-setup-qa:mv-skip-one infrastructure/quality
+docker run --rm --init --user "$(id -u):$(id -g)" \
+    --mount "type=bind,src=$PWD,dst=/app,readonly" --workdir /app \
+    -e TMPDIR=/tmp laravel-setup-qa:mv-skip-one php tests/create.php
+```

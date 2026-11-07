@@ -16,7 +16,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, pdo_sqlite, xml, curl, zip, pcntl, posix
-          tools: composer:2.8.12
+          tools: composer:2.11.1
           coverage: none
       - name: Check runtime and locked manifest
         run: |
@@ -29,7 +29,7 @@ jobs:
         run: |
           composer install --working-dir=infrastructure/quality --no-interaction --no-progress --prefer-dist
           php infrastructure/quality/vendor/bin/phpstan analyse -c phpstan-create.neon --no-progress
-          php infrastructure/quality/vendor/bin/pint --test src/Creator.php src/CreateCommand.php tests/create.php tests/create-real.php
+          php infrastructure/quality/vendor/bin/pint --test src/Creator.php src/CreateCommand.php tests/create.php tests/create-real.php infrastructure/quality/mv-skip-one.php
       - name: Build and verify standalone archive
         run: |
           composer build

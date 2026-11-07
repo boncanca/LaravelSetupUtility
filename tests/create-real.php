@@ -12,8 +12,15 @@ if (getenv('RUN_CREATE_INTEGRATION') !== '1') {
     exit(0);
 }
 $entry = $argv[1] ?? dirname(__DIR__).'/bin/laravel-setup';
-$root = sys_get_temp_dir().'/real create '.bin2hex(random_bytes(6));
+$temporary = realpath(getenv('TMPDIR') ?: '/tmp');
+$root = $temporary.'/real create '.bin2hex(random_bytes(6));
 mkdir($root, 0700);
+// Set before the first sys_get_temp_dir() call; independent test processes stay isolated.
+putenv('TMPDIR='.$root);
+$_ENV['TMPDIR'] = $root;
+if (sys_get_temp_dir() !== $root) {
+    throw new RuntimeException('Create tests require a fresh isolated temporary directory.');
+}
 $target = $root.'/Laravel application';
 $before = glob(sys_get_temp_dir().'/laravel-setup-create-*');
 $remove = function (string $path) use (&$remove): void {
