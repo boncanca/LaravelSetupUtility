@@ -48,6 +48,11 @@ final class Planner
 
     public function create(string $path, array $recipes, string $channel): array
     {
+        return $this->fromSnapshot(ProjectSnapshot::read($path, true), $recipes, $channel);
+    }
+
+    public function fromSnapshot(array $snapshot, array $recipes, string $channel): array
+    {
         if ($channel !== 'stable') {
             throw new RuntimeException('Only the stable catalog is currently supported.');
         }
@@ -61,7 +66,6 @@ final class Planner
                 throw new RuntimeException('Unsupported recipe selection.');
             }
         }
-        $snapshot = ProjectSnapshot::read($path, true);
         $parser = new VersionParser();
         $packages = [];
         $versions = [];

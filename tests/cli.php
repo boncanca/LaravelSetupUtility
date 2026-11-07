@@ -11,6 +11,8 @@ $cases = [
     [['list', '--raw'], 0, 'help'],
     [['install'], 1, 'not defined'],
     [['resolve-plan', 'missing-project', 'missing-plan.json'], 1, 'Resolution failed:'],
+    [['apply-resolution', 'missing-project', 'missing-bundle'], 1, 'Manifest transaction failed:'],
+    [['recover-resolution', 'missing-project', 'missing-bundle'], 1, 'Manifest transaction failed:'],
 ];
 try {
     foreach ($cases as [$arguments, $expectedExit, $expectedOutput]) {
@@ -29,7 +31,7 @@ try {
             throw new RuntimeException('CLI left files in the working directory.');
         }
     }
-    echo "PASS: five CLI contracts; foreign working directory unchanged.\n";
+    echo "PASS: seven CLI contracts; foreign working directory unchanged.\n";
 } finally {
     rmdir($directory);
 }

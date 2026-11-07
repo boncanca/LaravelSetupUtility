@@ -17,7 +17,7 @@ final class Resolver
     {
     }
 
-    public function resolve(string $path, array $plan): array
+    public function resolve(string $path, array $plan, ?string $bundle = null): array
     {
         $planner = new Planner();
         $planner->validate($path, $plan);
@@ -26,7 +26,7 @@ final class Resolver
             throw new RuntimeException('Project changed before staging. Replan before proceeding.');
         }
         $manifest = $snapshot['manifest'];
-        $this->guardManifest($manifest);
+        self::guardManifest($manifest);
         foreach ($plan['packages'] as $package) {
             $manifest[$package['dependency_type']][$package['name']] = $package['constraint'];
         }
@@ -105,13 +105,16 @@ final class Resolver
             }
             usort($packages, static fn (array $left, array $right): int => strcmp($left['name'], $right['name']));
 
+            $retained = $bundle === null ? null : ManifestTransaction::retain($snapshot, $plan, json_encode($manifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), $lock, $bundle);
+
             return [
                 'schema_version' => 1,
                 'plan_sha256' => hash('sha256', json_encode($plan, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)),
                 'resolved_packages' => $packages,
                 'lock_sha256' => hash('sha256', $lock),
-                'lock_retained' => false,
-                'replayable' => false,
+                'lock_retained' => $retained !== null,
+                'replayable' => $retained !== null,
+                'bundle' => $retained,
                 'compatibility' => ['dependencies' => 'solved_in_staging', 'integration' => 'unverified'],
                 'apply_ready' => false,
             ];
@@ -128,7 +131,7 @@ final class Resolver
         }
     }
 
-    private function guardManifest(array $manifest): void
+    public static function guardManifest(array $manifest): void
     {
         $allowed = ['$schema', 'name', 'description', 'type', 'keywords', 'license', 'authors', 'homepage', 'support', 'funding', 'require', 'require-dev', 'autoload', 'autoload-dev', 'scripts', 'extra', 'config', 'minimum-stability', 'prefer-stable', 'repositories'];
         if (array_diff(array_keys($manifest), $allowed) !== [] || ($manifest['repositories'] ?? []) !== []) {

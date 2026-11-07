@@ -8,6 +8,7 @@ use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -22,13 +23,14 @@ final class ResolveCommand extends Command
     {
         $this->setDescription('Resolve public Composer dependencies in disposable staging without applying changes.')
             ->addArgument('path', InputArgument::REQUIRED, 'Laravel project directory')
-            ->addArgument('plan-file', InputArgument::REQUIRED, 'Saved canonical plan JSON');
+            ->addArgument('plan-file', InputArgument::REQUIRED, 'Saved canonical plan JSON')
+            ->addOption('bundle', null, InputOption::VALUE_REQUIRED, 'New external private bundle directory to retain');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $result = (new Resolver())->resolve($input->getArgument('path'), Planner::readPlan($input->getArgument('plan-file')));
+            $result = (new Resolver())->resolve($input->getArgument('path'), Planner::readPlan($input->getArgument('plan-file')), $input->getOption('bundle'));
             $output->writeln(json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), OutputInterface::OUTPUT_RAW);
 
             return Command::SUCCESS;
