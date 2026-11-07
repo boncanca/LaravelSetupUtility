@@ -1,0 +1,29 @@
+{
+  "name": "boncanca/laravel-setup-utility",
+  "description": "Standalone disposable Laravel ecosystem configurator",
+  "type": "project",
+  "require": {
+    "php": "^8.3",
+    "symfony/console": "^7.3"
+  },
+  "require-dev": {
+    "humbug/box": "^4.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "LaravelSetup\\": "src/"
+    }
+  },
+  "bin": [
+    "bin/laravel-setup"
+  ],
+  "scripts": {
+    "test": "@php tests/cli.php",
+    "build": "@php -d phar.readonly=0 vendor/bin/box compile"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": false
+  },
+  "license": "proprietary"
+}
