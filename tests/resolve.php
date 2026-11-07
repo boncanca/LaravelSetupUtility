@@ -11,7 +11,7 @@ $root = sys_get_temp_dir().'/laravel resolver test '.bin2hex(random_bytes(6));
 mkdir($root, 0700);
 $project = $root.'/app';
 mkdir($project, 0700);
-$manifest = ['require' => ['php' => '^8.3', 'laravel/framework' => '^13.0'], 'scripts' => ['post-update-cmd' => 'touch must-not-run']];
+$manifest = ['require' => ['php' => '^8.3', 'laravel/framework' => '^13.0'], 'scripts' => ['post-update-cmd' => 'touch must-not-run'], 'config' => new stdClass(), 'extra' => new stdClass(), 'autoload' => (object) ['psr-4' => new stdClass()]];
 file_put_contents($project.'/composer.json', json_encode($manifest, JSON_THROW_ON_ERROR));
 $fake = $root.'/composer.php';
 $fakeSource = <<<'PHP'
@@ -24,6 +24,10 @@ foreach ($required as $flag) {
 }
 if (getenv('COMPOSER') !== 'composer.json' || getenv('COMPOSER_AUTH') !== '{}' || getenv('COMPOSER_VENDOR_DIR') !== getcwd().'/vendor' || getenv('COMPOSER_HOME') !== getcwd().'/home' || getenv('COMPOSER_ALLOW_SUPERUSER') !== false || getenv('COMPOSER_DISABLE_NETWORK') !== false || getenv('COMPOSER_NO_DEV') !== false || (fileperms(getcwd()) & 0777) !== 0700) {
     exit(11);
+}
+$rawManifest = json_decode(file_get_contents('composer.json'));
+if (!is_object($rawManifest->config ?? null) || !is_object($rawManifest->extra ?? null) || !is_object($rawManifest->scripts ?? null) || !is_object($rawManifest->autoload->{'psr-4'} ?? null)) {
+    exit(14);
 }
 $manifest = json_decode(file_get_contents('composer.json'), true);
 if (($manifest['require-dev']['laravel/pint'] ?? null) !== '^1.24') {
