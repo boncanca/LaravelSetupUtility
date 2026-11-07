@@ -13,4 +13,4 @@ Simplicity scales. Complexity fails. Use the minimum sufficient readable, correc
 - Keep stable/dev catalog selection distinct from upstream prerelease package selection.
 - Keep secrets and target data out of repository, diagnostics and AI requests.
 
-Current scope: packaging foundation and read-only manifest inspection; planning/application installation is not implemented.
+Current scope: packaging, read-only inspection and deterministic proposals for the curated stable engineering catalog. Dependency solving, integration compatibility and application installation are not implemented; plans must remain `apply_ready: false` until those prerequisites are verified.

@@ -2,7 +2,7 @@
 
 Use Symfony Console and Box directly. Laravel Zero is a viable Artisan-based alternative, but its application/container/config conventions add no benefit to this packaging increment. Add Symfony Process when execution needs it and Laravel Prompts when interactive selection exists. Do not install dependencies solely for later phases.
 
-The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`. It cannot create or configure Laravel applications yet. Version `0.1.0-dev` is a development identifier, not a published release.
+The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`, `plan <path>` and `check-plan <path> <plan-file>`. It cannot create or configure Laravel applications yet. Version `0.1.0-dev` is a development identifier, not a published release.
 
 Box is development-only. It includes production dependencies using Composer metadata. Explicit alias and timestamp remove two sources of build variation. Byte reproducibility is checked by two builds in the same environment; this does not establish cross-platform or cross-PHP byte identity.
 
@@ -18,6 +18,7 @@ composer test
 composer build
 php tests/cli.php "$PWD/build/laravel-setup.phar"
 php tests/inspect.php "$PWD/build/laravel-setup.phar"
+php tests/plan.php "$PWD/build/laravel-setup.phar"
 php tests/package.php
 ```
 
@@ -31,7 +32,19 @@ Tests launch the source and PHAR from a fresh foreign directory with spaces, che
 
 `inspect <path>` canonicalizes the project directory and reads its `composer.json` only. Success prints JSON keys `root`, `php_constraint` and `laravel_constraint`; constraints are declarations rather than installed versions or validated compatibility. Both PHP and `laravel/framework` must be nonempty strings in `require`; development-only Laravel dependencies are insufficient. Malformed JSON, missing/non-Laravel projects, non-string constraints, manifests larger than 1 MiB and manifest symlinks escaping the canonical project root are rejected with status 1 and a generic stderr diagnostic. No scripts, application bootstrap, `.env`, Composer commands or network requests run.
 
-The planner, dependency resolution, platform/Git inspection and approved-plan drift checks remain unimplemented in issue #4. The inspection command is read-only; it is not a sandbox for untrusted concurrent filesystem changes.
+The inspection command is read-only; it is not a sandbox for untrusted concurrent filesystem changes.
+
+## Deterministic planning boundary (partial issue #4)
+
+`plan <path> --recipe=pint --recipe=phpstan` prints a canonical JSON proposal; `check-plan <path> <plan-file>` recomputes it and rejects any structural/content mismatch. Select at least one recipe. Only the bundled stable catalog is implemented; dev and unknown recipes are rejected. Repeated selections are sorted and deduplicated. Catalog revision is SHA-256 of the exact bundled policy definitions, with schema, utility and recipe versions included. No timestamps or random identifiers enter plans. Runtime facts include actual PHP version and PHP OS/family, so cross-runtime equality is not promised.
+
+The small catalog proposes `laravel/pint` `^1.24` and `phpstan/phpstan` `^2.1` as development dependencies. Existing constraints and dependency categories are preserved after a possible-overlap check; ambiguous declarations in both Composer sections are rejected. PHP `^8.3` and Laravel `^12.0 || ^13.0` are curated utility policies, not claims about upstream package minimum requirements or tested integration support. Composer Semver parses constraints, checks range intersections and checks the actual PHP runtime against project/recipe constraints. Intersection establishes only possible compatibility. No dependency solver, package installation, configuration publishing or integration test runs against the target; dependencies remain unresolved, integration unverified and `apply_ready` is always false.
+
+Plans hash exact `composer.json` bytes and `composer.lock` presence/content. The lockfile is read only as bytes (maximum 16 MiB), not interpreted as installed state. Input file symlinks must remain within the canonical project root, and dangling input symlinks are rejected. No package.json or other package manifests are used in this Composer-only proposal, and they are not represented as checked. Composer manifests and saved plans are limited to 1 MiB. `inspect` continues to read composer.json only. No app/bootstrap/scripts, Composer processes, `.env` reads or network requests occur during inspection/planning/checking.
+
+Write proposal output outside the target. `check-plan` catches changed manifests, lockfile addition/removal/content changes, changed runtime/catalog, unsupported formats and modified proposal fields. It requires canonical key/list ordering after JSON parsing; whitespace is irrelevant. Recomputed equality is consistency checking, not a cryptographic signature, user approval or authenticity proof: a party able to replace both inputs and plan can generate a new matching proposal.
+
+Remaining issue #4 scope includes staged Composer dependency resolution, broader platform/Git inspection and recipe integration qualification before proposals can become applicable. Plan inspection is not an authorization to mutate targets.
 
 ## Upstream references
 

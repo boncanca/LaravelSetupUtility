@@ -12,5 +12,7 @@ final class Application extends ConsoleApplication
     {
         parent::__construct('Laravel Setup Utility', '0.1.0-dev');
         $this->add(new InspectCommand());
+        $this->add(new PlanningCommand());
+        $this->add(new PlanningCommand(check: true));
     }
 }
