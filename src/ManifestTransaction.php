@@ -105,7 +105,7 @@ final class ManifestTransaction
         if ($root === false || !is_dir($root)) {
             throw new RuntimeException('Project directory does not exist.');
         }
-        $data = self::load($root, $bundle);
+        $data = self::load($root, $bundle, recovery: true);
         $lock = self::acquire($root);
         try {
             if (self::journal($data) === null) {
@@ -121,7 +121,7 @@ final class ManifestTransaction
         }
     }
 
-    private static function load(string $root, string $bundle): array
+    private static function load(string $root, string $bundle, bool $recovery = false): array
     {
         $bundle = self::externalDirectory($bundle, $root, false);
         if ((fileperms($bundle) & 0777) !== 0700) {
@@ -146,6 +146,12 @@ final class ManifestTransaction
                 throw new RuntimeException('Bundle integrity check failed.');
             }
         }
+        $plan = null;
+        $originalHashes = ['composer.json' => hash('sha256', $files['original-composer.json']), 'composer.lock' => isset($files['original-composer.lock']) ? hash('sha256', $files['original-composer.lock']) : null];
+
+        // Recovery must work after PHP or the recipe catalog changes. It uses only
+        // retained byte hashes, modes, the journal and current target file states.
+        if (!$recovery) {
         $plan = self::decode($files['plan.json']);
         $original = self::decode($files['original-composer.json']);
         Resolver::guardManifest($original);
@@ -154,7 +160,6 @@ final class ManifestTransaction
         if (!is_string($php) || !is_string($laravel)) {
             throw new RuntimeException('Original bundle manifest is invalid.');
         }
-        $originalHashes = ['composer.json' => hash('sha256', $files['original-composer.json']), 'composer.lock' => isset($files['original-composer.lock']) ? hash('sha256', $files['original-composer.lock']) : null];
         $snapshot = ['root' => $root, 'manifest' => $original, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'inputs' => $originalHashes];
         if (!is_array($plan['recipes'] ?? null) || !is_string($plan['catalog_channel'] ?? null) || (new Planner())->fromSnapshot($snapshot, $plan['recipes'], $plan['catalog_channel']) !== $plan) {
             throw new RuntimeException('Bundle is not bound to the original plan and current catalog/runtime.');
@@ -197,6 +202,7 @@ final class ManifestTransaction
                     throw new RuntimeException('Resolved lockfile does not directly satisfy all manifest requirements; virtual replacements are unsupported.');
                 }
             }
+        }
         }
         $originalStates = $resolvedStates = [];
         foreach (self::NAMES as $name) {
@@ -277,14 +283,19 @@ final class ManifestTransaction
         if ($temporary === false || self::inside($temporary, $root)) {
             throw new RuntimeException('External lock storage is required.');
         }
-        $directory = $temporary.'/laravel-setup-target-locks';
-        if (!file_exists($directory) && !mkdir($directory, 0700)) {
-            throw new RuntimeException('External lock directory could not be created.');
-        }
+        // A private directory shared by every account leaves subsequent users
+        // unable to acquire locks in the system-wide temporary directory.
         $probe = tmpfile();
-        $owner = $probe === false ? null : fstat($probe)['uid'];
+        $owner = $probe === false ? null : (fstat($probe)['uid'] ?? null);
         if (is_resource($probe)) {
             fclose($probe);
+        }
+        if (!is_int($owner) || $owner < 0) {
+            throw new RuntimeException('Effective lock owner could not be determined.');
+        }
+        $directory = $temporary.'/laravel-setup-target-locks-'.$owner;
+        if (!file_exists($directory) && !mkdir($directory, 0700)) {
+            throw new RuntimeException('External lock directory could not be created.');
         }
         if (is_link($directory) || !is_dir($directory) || (fileperms($directory) & 0777) !== 0700 || $owner === null || fileowner($directory) !== $owner) {
             throw new RuntimeException('External lock directory is unsafe.');
