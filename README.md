@@ -4,7 +4,9 @@ A standalone, disposable Laravel ecosystem configurator.
 
 ## Current increment
 
-The CLI packaging foundation is implemented: help, list, completion and version output, plus a standalone PHAR build. **Creating and configuring Laravel applications is not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+The CLI packaging foundation and read-only manifest inspection are implemented, with a standalone PHAR build. **Creating and configuring Laravel applications is not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+
+Run `php bin/laravel-setup inspect /path/to/project` to print the canonical project root and PHP/Laravel constraints declared in `composer.json` as JSON. Inspection reads only that manifest; it does not execute application code or report installed versions.
 
 ## Development
 
@@ -16,6 +18,7 @@ composer test
 composer build
 php build/laravel-setup.phar --help
 php tests/cli.php "$PWD/build/laravel-setup.phar"
+php tests/inspect.php "$PWD/build/laravel-setup.phar"
 php tests/package.php
 ```
 
