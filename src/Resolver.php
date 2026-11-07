@@ -27,9 +27,14 @@ final class Resolver
         }
         $manifest = $snapshot['manifest'];
         self::guardManifest($manifest);
+        // Preserve JSON objects (including empty objects) when editing Composer input.
+        $stagedManifest = json_decode($snapshot['manifest_contents'], flags: JSON_THROW_ON_ERROR);
         foreach ($plan['packages'] as $package) {
-            $manifest[$package['dependency_type']][$package['name']] = $package['constraint'];
+            $type = $package['dependency_type'];
+            $stagedManifest->{$type} ??= new \stdClass();
+            $stagedManifest->{$type}->{$package['name']} = $package['constraint'];
         }
+        $resolvedManifest = json_encode($stagedManifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
         $temporary = realpath(sys_get_temp_dir());
         if ($temporary === false || $temporary === $snapshot['root'] || str_starts_with($temporary, rtrim($snapshot['root'], DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR)) {
             throw new RuntimeException('External temporary storage is required.');
@@ -41,7 +46,7 @@ final class Resolver
         try {
             mkdir($stage.'/home', 0700);
             mkdir($stage.'/cache', 0700);
-            file_put_contents($stage.'/composer.json', json_encode($manifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+            file_put_contents($stage.'/composer.json', $resolvedManifest);
             if ($snapshot['lock_contents'] !== null) {
                 file_put_contents($stage.'/composer.lock', $snapshot['lock_contents']);
             }
@@ -105,7 +110,7 @@ final class Resolver
             }
             usort($packages, static fn (array $left, array $right): int => strcmp($left['name'], $right['name']));
 
-            $retained = $bundle === null ? null : ManifestTransaction::retain($snapshot, $plan, json_encode($manifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), $lock, $bundle);
+            $retained = $bundle === null ? null : ManifestTransaction::retain($snapshot, $plan, $resolvedManifest, $lock, $bundle);
 
             return [
                 'schema_version' => 1,
