@@ -1,0 +1,9 @@
+parameters:
+    level: 6
+    paths:
+        - src/Creator.php
+        - src/CreateCommand.php
+    # Include an unsupported preflight input; deployment still requires PHP >=8.3.
+    phpVersion:
+        min: 80200
+        max: 80599

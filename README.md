@@ -4,7 +4,9 @@ A standalone, disposable Laravel ecosystem configurator.
 
 ## Current increment
 
-The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. **Creating Laravel applications, configuring engineering tools and installing vendor dependencies are not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. `create <path>` now installs and verifies the pinned official Laravel 12 skeleton into a new destination. Selectable engineering presets and existing-application dependency installation remain pending. See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+
+Run `php bin/laravel-setup create /private/projects/my-app` to download the official Laravel skeleton and its upstream Composer dependencies in external private staging, verify its homepage/health endpoint and tests, then publish without overwriting an existing path. No migrations or npm installation run. See [creation requirements and safety boundaries](docs/create.md) and [the independent cloud environment](docs/cloud-environment.md).
 
 Run `php bin/laravel-setup inspect /path/to/project` to print the canonical project root and PHP/Laravel constraints declared in `composer.json` as JSON. Inspection reads only that manifest; it does not execute application code or report installed versions.
 

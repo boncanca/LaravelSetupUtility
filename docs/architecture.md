@@ -2,7 +2,7 @@
 
 Use Symfony Console and Box directly. Laravel Zero is a viable Artisan-based alternative, but its application/container/config conventions add no benefit to this packaging increment. Add Symfony Process when execution needs it and Laravel Prompts when interactive selection exists. Do not install dependencies solely for later phases.
 
-The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`, `plan <path>` and `check-plan <path> <plan-file>`. It cannot create or configure Laravel applications yet. Version `0.1.0-dev` is a development identifier, not a published release.
+The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`, `plan <path>` and `check-plan <path> <plan-file>`. `create <path>` adds a distinct new-application journey using the official Laravel skeleton; selectable engineering configuration remains pending. See [create.md](create.md). Version `0.1.0-dev` is a development identifier, not a published release.
 
 Box is development-only. It includes production dependencies using Composer metadata. Explicit alias and timestamp remove two sources of build variation. Byte reproducibility is checked by two builds in the same environment; this does not establish cross-platform or cross-PHP byte identity.
 
@@ -22,7 +22,7 @@ php tests/plan.php "$PWD/build/laravel-setup.phar"
 php tests/package.php
 ```
 
-The PHAR can be moved away from source/vendor and run with PHP. It requires no Composer installation at runtime. It does not contain PHP itself.
+The PHAR can be moved away from source/vendor and run with PHP. Inspection/planning require no Composer installation at runtime; `create` and `resolve-plan` require an external Composer 2 executable. It does not contain PHP itself.
 
 ## Acceptance boundary
 

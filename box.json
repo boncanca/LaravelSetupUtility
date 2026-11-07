@@ -12,6 +12,8 @@
     ".github",
     "AGENTS.md",
     "README.md",
-    "build"
+    "build",
+    "infrastructure",
+    "phpstan-create.neon"
   ]
 }

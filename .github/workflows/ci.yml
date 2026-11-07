@@ -4,10 +4,20 @@ permissions:
   contents: read
 jobs:
   packaging:
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, pdo_sqlite, xml, curl, zip, pcntl, posix
+          tools: composer:2.8.12
+          coverage: none
       - name: Check runtime and locked manifest
         run: |
           php --version
@@ -15,6 +25,11 @@ jobs:
           composer validate --strict
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: composer test
+      - name: Check create implementation style and types with isolated pinned tools
+        run: |
+          composer install --working-dir=infrastructure/quality --no-interaction --no-progress --prefer-dist
+          php infrastructure/quality/vendor/bin/phpstan analyse -c phpstan-create.neon --no-progress
+          php infrastructure/quality/vendor/bin/pint --test src/Creator.php src/CreateCommand.php tests/create.php tests/create-real.php
       - name: Build and verify standalone archive
         run: |
           composer build
@@ -26,6 +41,10 @@ jobs:
           mkdir -p "$isolated"
           cp build/laravel-setup.phar "$isolated/utility.phar"
           php tests/cli.php "$isolated/utility.phar"
+      - name: Verify real official Laravel creation with standalone archive
+        env:
+          RUN_CREATE_INTEGRATION: '1'
+        run: php tests/create-real.php "$PWD/build/laravel-setup.phar"
       - name: Check repeated-build identity
         run: |
           cp build/laravel-setup.phar /tmp/first-build.phar
