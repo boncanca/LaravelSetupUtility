@@ -152,57 +152,57 @@ final class ManifestTransaction
         // Recovery must work after PHP or the recipe catalog changes. It uses only
         // retained byte hashes, modes, the journal and current target file states.
         if (!$recovery) {
-        $plan = self::decode($files['plan.json']);
-        $original = self::decode($files['original-composer.json']);
-        Resolver::guardManifest($original);
-        $php = $original['require']['php'] ?? null;
-        $laravel = $original['require']['laravel/framework'] ?? null;
-        if (!is_string($php) || !is_string($laravel)) {
-            throw new RuntimeException('Original bundle manifest is invalid.');
-        }
-        $snapshot = ['root' => $root, 'manifest' => $original, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'inputs' => $originalHashes];
-        if (!is_array($plan['recipes'] ?? null) || !is_string($plan['catalog_channel'] ?? null) || (new Planner())->fromSnapshot($snapshot, $plan['recipes'], $plan['catalog_channel']) !== $plan) {
-            throw new RuntimeException('Bundle is not bound to the original plan and current catalog/runtime.');
-        }
-        $expected = $original;
-        foreach ($plan['packages'] as $package) {
-            $expected[$package['dependency_type']][$package['name']] = $package['constraint'];
-        }
-        if (self::decode($files['composer.json']) !== $expected) {
-            throw new RuntimeException('Resolved manifest contains changes outside approved package requirements.');
-        }
-        $resolved = self::decode($files['composer.lock']);
-        if (!is_array($resolved['packages'] ?? null) || !is_array($resolved['packages-dev'] ?? null)) {
-            throw new RuntimeException('Resolved lockfile shape is unsupported.');
-        }
-        $versions = [];
-        $production = array_column($resolved['packages'], 'name');
-        foreach (array_merge($resolved['packages'], $resolved['packages-dev']) as $package) {
-            if (!is_array($package) || !is_string($package['name'] ?? null) || !is_string($package['version'] ?? null) || isset($versions[$package['name']])) {
-                throw new RuntimeException('Resolved lockfile package metadata is invalid.');
+            $plan = self::decode($files['plan.json']);
+            $original = self::decode($files['original-composer.json']);
+            Resolver::guardManifest($original);
+            $php = $original['require']['php'] ?? null;
+            $laravel = $original['require']['laravel/framework'] ?? null;
+            if (!is_string($php) || !is_string($laravel)) {
+                throw new RuntimeException('Original bundle manifest is invalid.');
             }
-            $versions[$package['name']] = $package['version'];
-        }
-        foreach (['require', 'require-dev'] as $section) {
-            $requirements = $expected[$section] ?? [];
-            if (!is_array($requirements)) {
-                throw new RuntimeException('Resolved dependency sections are invalid.');
+            $snapshot = ['root' => $root, 'manifest' => $original, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'inputs' => $originalHashes];
+            if (!is_array($plan['recipes'] ?? null) || !is_string($plan['catalog_channel'] ?? null) || (new Planner())->fromSnapshot($snapshot, $plan['recipes'], $plan['catalog_channel']) !== $plan) {
+                throw new RuntimeException('Bundle is not bound to the original plan and current catalog/runtime.');
             }
-            foreach ($requirements as $name => $constraint) {
-                if (is_string($name) && preg_match('~^(php(?:-.*)?|ext-.*|lib-.*|composer(?:-plugin-api|-runtime-api)?)$~D', $name)) {
-                    continue;
+            $expected = $original;
+            foreach ($plan['packages'] as $package) {
+                $expected[$package['dependency_type']][$package['name']] = $package['constraint'];
+            }
+            if (self::decode($files['composer.json']) !== $expected) {
+                throw new RuntimeException('Resolved manifest contains changes outside approved package requirements.');
+            }
+            $resolved = self::decode($files['composer.lock']);
+            if (!is_array($resolved['packages'] ?? null) || !is_array($resolved['packages-dev'] ?? null)) {
+                throw new RuntimeException('Resolved lockfile shape is unsupported.');
+            }
+            $versions = [];
+            $production = array_column($resolved['packages'], 'name');
+            foreach (array_merge($resolved['packages'], $resolved['packages-dev']) as $package) {
+                if (!is_array($package) || !is_string($package['name'] ?? null) || !is_string($package['version'] ?? null) || isset($versions[$package['name']])) {
+                    throw new RuntimeException('Resolved lockfile package metadata is invalid.');
                 }
-                try {
-                    $satisfied = is_string($name) && is_string($constraint) && isset($versions[$name]) && Semver::satisfies($versions[$name], $constraint)
-                        && ($section !== 'require' || in_array($name, $production, true));
-                } catch (\UnexpectedValueException) {
-                    $satisfied = false;
+                $versions[$package['name']] = $package['version'];
+            }
+            foreach (['require', 'require-dev'] as $section) {
+                $requirements = $expected[$section] ?? [];
+                if (!is_array($requirements)) {
+                    throw new RuntimeException('Resolved dependency sections are invalid.');
                 }
-                if (!$satisfied) {
-                    throw new RuntimeException('Resolved lockfile does not directly satisfy all manifest requirements; virtual replacements are unsupported.');
+                foreach ($requirements as $name => $constraint) {
+                    if (is_string($name) && preg_match('~^(php(?:-.*)?|ext-.*|lib-.*|composer(?:-plugin-api|-runtime-api)?)$~D', $name)) {
+                        continue;
+                    }
+                    try {
+                        $satisfied = is_string($name) && is_string($constraint) && isset($versions[$name]) && Semver::satisfies($versions[$name], $constraint)
+                            && ($section !== 'require' || in_array($name, $production, true));
+                    } catch (\UnexpectedValueException) {
+                        $satisfied = false;
+                    }
+                    if (!$satisfied) {
+                        throw new RuntimeException('Resolved lockfile does not directly satisfy all manifest requirements; virtual replacements are unsupported.');
+                    }
                 }
             }
-        }
         }
         $originalStates = $resolvedStates = [];
         foreach (self::NAMES as $name) {
