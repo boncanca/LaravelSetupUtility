@@ -18,7 +18,7 @@
     "bin/laravel-setup"
   ],
   "scripts": {
-    "test": "@php tests/cli.php",
+    "test": ["@php tests/cli.php", "@php tests/inspect.php"],
     "build": "@php -d phar.readonly=0 vendor/bin/box compile"
   },
   "config": {
