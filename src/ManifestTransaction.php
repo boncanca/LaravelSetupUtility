@@ -26,7 +26,7 @@ final class ManifestTransaction
             throw new RuntimeException('Bundle destination must be a new external directory.');
         }
         try {
-            $files = ['plan.json' => self::json($plan), 'original-composer.json' => $snapshot['composer_contents'], 'composer.json' => $manifest, 'composer.lock' => $lock];
+            $files = ['plan.json' => self::json($plan), 'original-composer.json' => $snapshot['manifest_contents'], 'composer.json' => $manifest, 'composer.lock' => $lock];
             if ($snapshot['lock_contents'] !== null) {
                 $files['original-composer.lock'] = $snapshot['lock_contents'];
             }
