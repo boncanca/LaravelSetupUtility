@@ -33,6 +33,39 @@ try {
     if ($transaction->apply($project, $bundle)['status'] !== 'already_applied') {
         throw new RuntimeException('Apply must be idempotent.');
     }
+    // Simulate retained evidence from an older PHP/catalog release. Applying
+    // must reject it, but even an interrupted transaction must remain recoverable.
+    $priorPlan = file_get_contents($bundle.'/plan.json');
+    $priorMeta = file_get_contents($bundle.'/bundle.json');
+    $priorJournal = file_get_contents($bundle.'/journal.json');
+    $historicPlan = json_decode($priorPlan, true, flags: JSON_THROW_ON_ERROR);
+    $historicPlan['runtime']['php'] = '8.3.0';
+    $historicPlan['catalog_revision'] = 'sha256:older-catalog';
+    $historicPlanBytes = json_encode($historicPlan, JSON_THROW_ON_ERROR);
+    $historicMeta = json_decode($priorMeta, true, flags: JSON_THROW_ON_ERROR);
+    $historicMeta['hashes']['plan.json'] = hash('sha256', $historicPlanBytes);
+    $historicMetaBytes = json_encode($historicMeta, JSON_THROW_ON_ERROR);
+    $historicJournal = json_decode($priorJournal, true, flags: JSON_THROW_ON_ERROR);
+    $historicJournal['bundle_id'] = hash('sha256', $historicMetaBytes);
+    $historicJournal['status'] = 'prepared';
+    file_put_contents($bundle.'/plan.json', $historicPlanBytes);
+    file_put_contents($bundle.'/bundle.json', $historicMetaBytes);
+    file_put_contents($bundle.'/journal.json', json_encode($historicJournal, JSON_THROW_ON_ERROR));
+    try {
+        $transaction->apply($project, $bundle);
+        throw new LogicException('Apply must reject a different runtime/catalog.');
+    } catch (RuntimeException) {
+    }
+    unlink($project.'/composer.lock'); // Interrupted after just one manifest remains resolved.
+    $transaction->recover($project, $bundle);
+    if (file_get_contents($project.'/composer.json') !== $original || file_exists($project.'/composer.lock')) {
+        throw new RuntimeException('Recovery after runtime/catalog change must restore interrupted transaction.');
+    }
+    file_put_contents($bundle.'/plan.json', $priorPlan);
+    file_put_contents($bundle.'/bundle.json', $priorMeta);
+    file_put_contents($bundle.'/journal.json', $priorJournal);
+    $transaction->apply($project, $bundle);
+
     file_put_contents($project.'/composer.json', "\n", FILE_APPEND);
     try {
         $transaction->recover($project, $bundle);
@@ -56,7 +89,14 @@ try {
     if (file_get_contents($project.'/composer.json') !== $original || file_exists($project.'/composer.lock')) {
         throw new RuntimeException('Failed apply must roll back the first write.');
     }
-    $held = fopen(sys_get_temp_dir().'/laravel-setup-target-locks/'.hash('sha256', realpath($project)).'.lock', 'c+b');
+    $probe = tmpfile();
+    $owner = fstat($probe)['uid'];
+    fclose($probe);
+    $lockDirectory = sys_get_temp_dir().'/laravel-setup-target-locks-'.$owner;
+    if (!is_dir($lockDirectory) || (fileperms($lockDirectory) & 0777) !== 0700 || fileowner($lockDirectory) !== $owner) {
+        throw new RuntimeException('Lock directory must be private and scoped to effective user.');
+    }
+    $held = fopen($lockDirectory.'/'.hash('sha256', realpath($project)).'.lock', 'c+b');
     flock($held, LOCK_EX);
     try {
         $transaction->apply($project, $bundle);
