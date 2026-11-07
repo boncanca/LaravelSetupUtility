@@ -35,7 +35,7 @@ final class ProjectSnapshot
             $inputs['composer.lock'] = $lock === null ? null : hash('sha256', $lock);
         }
 
-        return ['root' => $root, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'manifest' => $data, 'manifest_contents' => $contents, 'composer_contents' => $contents, 'inputs' => $inputs, 'lock_contents' => $lock];
+        return ['root' => $root, 'php_constraint' => $php, 'laravel_constraint' => $laravel, 'manifest' => $data, 'manifest_contents' => $contents, 'inputs' => $inputs, 'lock_contents' => $lock];
     }
 
     private static function readFile(string $root, string $name, int $limit): string
