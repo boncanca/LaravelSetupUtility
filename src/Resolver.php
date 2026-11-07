@@ -30,7 +30,7 @@ final class Resolver
         // Decode as objects for staging: associative decoding turns {} into [].
         // Preserve Composer's object-valued fields, including empty objects.
         $stagedManifest = json_decode(
-            file_get_contents($snapshot['root'].'/composer.json'),
+            $snapshot['manifest_contents'],
             flags: JSON_THROW_ON_ERROR
         );
         foreach ($plan['packages'] as $package) {
