@@ -27,8 +27,16 @@ final class Resolver
         }
         $manifest = $snapshot['manifest'];
         $this->guardManifest($manifest);
+        // Decode as objects for staging: associative decoding turns {} into [].
+        // Preserve Composer's object-valued fields, including empty objects.
+        $stagedManifest = json_decode(
+            file_get_contents($snapshot['root'].'/composer.json'),
+            flags: JSON_THROW_ON_ERROR
+        );
         foreach ($plan['packages'] as $package) {
-            $manifest[$package['dependency_type']][$package['name']] = $package['constraint'];
+            $type = $package['dependency_type'];
+            $stagedManifest->{$type} ??= new \\stdClass();
+            $stagedManifest->{$type}->{$package['name']} = $package['constraint'];
         }
         $temporary = realpath(sys_get_temp_dir());
         if ($temporary === false || $temporary === $snapshot['root'] || str_starts_with($temporary, rtrim($snapshot['root'], DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR)) {
@@ -41,7 +49,7 @@ final class Resolver
         try {
             mkdir($stage.'/home', 0700);
             mkdir($stage.'/cache', 0700);
-            file_put_contents($stage.'/composer.json', json_encode($manifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+            file_put_contents($stage.'/composer.json', json_encode($stagedManifest, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
             if ($snapshot['lock_contents'] !== null) {
                 file_put_contents($stage.'/composer.lock', $snapshot['lock_contents']);
             }
