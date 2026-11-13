@@ -13,4 +13,4 @@ Simplicity scales. Complexity fails. Use the minimum sufficient readable, correc
 - Keep stable/dev catalog selection distinct from upstream prerelease package selection.
 - Keep secrets and target data out of repository, diagnostics and AI requests.
 
-Current scope: packaging foundation only; planning/application installation is not implemented.
+Current scope: packaging, inspection/planning, isolated Composer resolution, retained private bundles and bounded manifest/lock transactions with recovery. The utility does not install vendor dependencies or execute application scripts. All outputs retain `apply_ready: false` for full application readiness; file-only apply reports `dependencies_installed: false`. Transaction changes require failure-injection, exact restoration and user-edit refusal tests. Resolver tests distinguish synthetic fixtures from actual upstream integration evidence.

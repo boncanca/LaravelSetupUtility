@@ -4,7 +4,9 @@
   "type": "project",
   "require": {
     "php": "^8.3",
-    "symfony/console": "^7.3"
+    "composer/semver": "^3.4",
+    "symfony/console": "^7.3",
+    "symfony/process": "^7.3"
   },
   "require-dev": {
     "humbug/box": "^4.6"
@@ -18,7 +20,7 @@
     "bin/laravel-setup"
   ],
   "scripts": {
-    "test": "@php tests/cli.php",
+    "test": ["@php tests/cli.php", "@php tests/inspect.php", "@php tests/plan.php", "@php tests/resolve.php", "@php tests/resolve-real.php", "@php tests/transaction.php"],
     "build": "@php -d phar.readonly=0 vendor/bin/box compile"
   },
   "config": {

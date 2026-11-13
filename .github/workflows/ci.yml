@@ -19,6 +19,8 @@ jobs:
         run: |
           composer build
           php tests/cli.php "$PWD/build/laravel-setup.phar"
+          php tests/inspect.php "$PWD/build/laravel-setup.phar"
+          php tests/plan.php "$PWD/build/laravel-setup.phar"
           php tests/package.php
           isolated="$(mktemp -d)/standalone app"
           mkdir -p "$isolated"
