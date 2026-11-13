@@ -23,6 +23,14 @@ Planning supports only the bundled stable `pint` and `phpstan` recipe policies f
 
 `apply-resolution` changes only the approved `composer.json` and `composer.lock`, under an external target lock and recovery journal. It rejects drift, tampered bundles and target symlinks; repeated apply skips already-applied bytes. Recovery restores exact original files, including an originally absent lock, and refuses user edits. Backups/journal remain outside the target. Dependencies are not installed and all summaries explicitly retain pending installation/integration status. Review/trust the bundle: hashes detect inconsistency and are not signatures or authorization. Recovery covers these two files, not vendor state, script effects or universal rollback.
 
+## Read-only runtime diagnostics
+
+`php bin/laravel-setup doctor /path/to/project` returns JSON containing actual PHP/extensions, production PHP/extension requirement checks, declared and locked Laravel versions, known configuration presence, and executable availability on PATH. It does not execute discovered tools, application bootstrap, Composer scripts, Git hooks, or read `.env`. A lock version is not proof of installed vendor state. Tool versions, Git cleanliness, transitive/dev platform requirements and frontend manifests are not validated yet.
+
+Exit 0 means the declared production PHP/extension requirements checked by doctor are satisfied; exit 1 with a report means requirements are unmet. Invalid input fails on stderr without echoing file contents. Every report retains `apply_ready: false`. Configuration presence does not mean a file is valid or an escaping symlink is trusted for later writes.
+
+The approved roadmap and issue mapping are in [docs/implementation-plan.md](docs/implementation-plan.md).
+
 ## Development
 
 Use PHP 8.3+ and Composer 2. The currently qualified runtime is Ubuntu 24.04 with PHP 8.3.6; other platforms remain unverified.
