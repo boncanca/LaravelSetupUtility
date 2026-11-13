@@ -20,7 +20,15 @@
     "bin/laravel-setup"
   ],
   "scripts": {
-    "test": ["@php tests/cli.php", "@php tests/inspect.php", "@php tests/plan.php", "@php tests/resolve.php", "@php tests/resolve-real.php", "@php tests/transaction.php"],
+    "test": [
+      "@php tests/cli.php",
+      "@php tests/inspect.php",
+      "@php tests/plan.php",
+      "@php tests/resolve.php",
+      "@php tests/resolve-real.php",
+      "@php tests/transaction.php",
+      "@php tests/doctor.php"
+    ],
     "build": "@php -d phar.readonly=0 vendor/bin/box compile"
   },
   "config": {
