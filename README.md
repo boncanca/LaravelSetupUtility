@@ -4,7 +4,7 @@ A standalone, disposable Laravel ecosystem configurator.
 
 ## Current increment
 
-The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. **Creating Laravel applications, configuring engineering tools and installing vendor dependencies are not implemented yet.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. **New raw Laravel creation is available as a bounded workflow. Existing-app dependency installation and engineering configuration remain incomplete.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
 
 Run `php bin/laravel-setup inspect /path/to/project` to print the canonical project root and PHP/Laravel constraints declared in `composer.json` as JSON. Inspection reads only that manifest; it does not execute application code or report installed versions.
 
@@ -22,6 +22,21 @@ Planning supports only the bundled stable `pint` and `phpstan` recipe policies f
 `resolve-plan` requires Composer in PATH and resolves dependencies in private staging, using public Packagist without plugins, scripts or installation. Custom repositories, platform overrides, custom Composer paths and unknown manifest/config settings are rejected. Solver diagnostics are redacted. Without `--bundle`, the generated lock is discarded. An optional new external bundle retains exact inputs, plan, resolved files and hashes with private permissions.
 
 `apply-resolution` changes only the approved `composer.json` and `composer.lock`, under an external target lock and recovery journal. It rejects drift, tampered bundles and target symlinks; repeated apply skips already-applied bytes. Recovery restores exact original files, including an originally absent lock, and refuses user edits. Backups/journal remain outside the target. Dependencies are not installed and all summaries explicitly retain pending installation/integration status. Review/trust the bundle: hashes detect inconsistency and are not signatures or authorization. Recovery covers these two files, not vendor state, script effects or universal rollback.
+
+## New raw Laravel application
+
+```sh
+# Read-only preview; parent directory must already exist.
+php bin/laravel-setup new /path/to/new-app
+# Execute the displayed fixed recipe, install upstream code and verify in staging.
+php bin/laravel-setup new /path/to/new-app --apply
+```
+
+The recipe pins `laravel/laravel` skeleton 13.11.0, resolves and retains Composer dependencies/lock, disables Composer scripts/plugins, writes a private `.env` and key, then runs Artisan boot/route checks and the upstream PHPUnit suite. Sessions/cache use files and queues run synchronously, so the welcome page does not require database setup. No database migrations, frontend install/build, authentication kit, engineering preset, Git repository or deployment are performed.
+
+A private sibling directory holds staging; the destination appears only after checks pass. Existing paths, including symlinks, are refused. Failed/timeout runs clean their owned stage and do not publish; abrupt host/process termination may leave a private sibling stage requiring manual removal. Cooperating new-project runs use an external lock. Arbitrary hostile filesystem changes and power-loss durability are outside this guarantee. The parent directory must be trusted.
+
+Dependency solving is time-sensitive: the pinned skeleton and saved final lock identify the generated app; this is not byte-identical generation across future resolutions. Composer/PHP and upstream dependency code are trusted prerequisites. Subprocess output is suppressed to avoid exposing secrets; errors name the failed step. At present this recipe supports only raw Laravel, with no existing-app conversion.
 
 ## Read-only runtime diagnostics
 
