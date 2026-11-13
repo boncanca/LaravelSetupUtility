@@ -29,7 +29,8 @@
       "@php tests/transaction.php",
       "@php tests/doctor.php",
       "@php tests/new.php",
-      "@php tests/new-cli.php"
+      "@php tests/new-cli.php",
+      "@php tests/engineering.php"
     ],
     "build": "@php -d phar.readonly=0 vendor/bin/box compile"
   },

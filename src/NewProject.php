@@ -19,8 +19,11 @@ final class NewProject
     ) {
     }
 
-    public function plan(string $destination): array
+    public function plan(string $destination, string $engineering = 'none'): array
     {
+        if (!in_array($engineering, ['none', 'strict'], true)) {
+            throw new RuntimeException('Engineering selection must be none or strict.');
+        }
         $name = basename($destination);
         $parent = realpath(dirname($destination));
         if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$/D', $name) || trim($name) !== $name || $parent === false || !is_dir($parent)) {
@@ -35,21 +38,25 @@ final class NewProject
             'schema_version' => 1,
             'destination' => $target,
             'foundation' => 'raw-laravel',
+            'engineering' => $engineering,
+            'engineering_packages' => $engineering === 'strict' ? EngineeringPreset::PACKAGES : [],
+            'engineering_changes' => $engineering === 'strict' ? 'Install selected runtime/dev tools, format new scaffold, generate constitution and CI; scoped PHPUnit unlock may select a Pest-compatible version.' : 'none',
             'skeleton_package' => 'laravel/laravel',
             'skeleton_version' => self::SKELETON,
-            'composer_scripts' => false,
+            'composer_scripts' => $engineering === 'strict' ? ['fix', 'check'] : false,
+            'composer_lifecycle_scripts' => false,
             'composer_plugins' => false,
             'database_migrations' => false,
             'frontend_installation' => false,
-            'verification' => ['artisan_version', 'route_list', 'upstream_phpunit'],
+            'verification' => ['artisan_version', 'route_list', $engineering === 'strict' ? 'composer_check' : 'upstream_phpunit'],
             'retained' => ['upstream_application', 'upstream_dependencies', 'composer_lock', 'local_environment'],
             'note' => 'Apply executes upstream dependency code for boot and tests; fresh dependency resolution is time-sensitive.',
         ];
     }
 
-    public function create(string $destination): array
+    public function create(string $destination, string $engineering = 'none'): array
     {
-        $plan = $this->plan($destination);
+        $plan = $this->plan($destination, $engineering);
         $target = $plan['destination'];
         $parent = dirname($target);
         $stage = $parent.'/.lsu-new-'.bin2hex(random_bytes(12));
@@ -59,7 +66,7 @@ final class NewProject
         $lock = null;
         try {
             $lock = $this->lock($target);
-            $this->plan($target);
+            $this->plan($target, $engineering);
             mkdir($stage.'/composer-home', 0700);
             mkdir($stage.'/composer-cache', 0700);
             $environment = [];
@@ -124,10 +131,24 @@ final class NewProject
                 }
             }
             $bootEnvironment = array_merge($bootEnvironment, ['APP_ENV' => 'local', 'APP_KEY' => $key, 'DB_CONNECTION' => 'sqlite', 'DB_DATABASE' => ':memory:', 'SESSION_DRIVER' => 'array', 'CACHE_STORE' => 'array', 'QUEUE_CONNECTION' => 'sync']);
+            if ($engineering === 'strict') {
+                (new EngineeringPreset())->prepare($app);
+                $this->run([...$this->composerCommand, 'update', ...EngineeringPreset::PACKAGES, '--no-scripts', '--no-plugins', '--no-interaction', '--no-progress'], $app, $environment, 'Engineering dependency installation');
+                $this->run([...$this->phpCommand, 'artisan', 'package:discover', '--no-ansi'], $app, $bootEnvironment, 'Engineering package discovery');
+                $this->run([...$this->composerCommand, 'run-script', 'fix', '--no-plugins', '--no-interaction'], $app, array_merge($bootEnvironment, $environment), 'New scaffold formatting');
+            }
             $this->run([...$this->phpCommand, 'artisan', '--version', '--no-ansi'], $app, $bootEnvironment, 'Application boot');
             $this->run([...$this->phpCommand, 'artisan', 'route:list', '--json', '--no-ansi'], $app, $bootEnvironment, 'Route verification');
-            $this->run([...$this->phpCommand, 'vendor/bin/phpunit'], $app, array_merge($bootEnvironment, ['APP_ENV' => 'testing']), 'Upstream tests');
-            $this->plan($target);
+            if ($engineering === 'strict') {
+                $this->run([...$this->composerCommand, 'run-script', 'check', '--no-plugins', '--no-interaction'], $app, array_merge($bootEnvironment, $environment, ['APP_ENV' => 'testing']), 'Engineering verification');
+            } else {
+                $this->run([...$this->phpCommand, 'vendor/bin/phpunit'], $app, array_merge($bootEnvironment, ['APP_ENV' => 'testing']), 'Upstream tests');
+            }
+            $facts = (new Doctor())->inspect($app);
+            if (!$facts['requirements_satisfied']) {
+                throw new RuntimeException('Configured application has unmet runtime requirements.');
+            }
+            $this->plan($target, $engineering);
             // Reserve the destination atomically before rename so an ordinary
             // concurrent creator cannot have its empty directory replaced.
             if (!@mkdir($target, 0700)) {
@@ -146,6 +167,7 @@ final class NewProject
             return [
                 'schema_version' => 1,
                 'status' => 'created',
+                'engineering' => $engineering,
                 'destination' => $target,
                 'skeleton_version' => self::SKELETON,
                 'locked_laravel_version' => $facts['project']['locked_laravel_version'],

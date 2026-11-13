@@ -4,7 +4,7 @@ A standalone, disposable Laravel ecosystem configurator.
 
 ## Current increment
 
-The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. **New raw Laravel creation is available as a bounded workflow. Existing-app dependency installation and engineering configuration remain incomplete.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
+The standalone CLI supports manifest inspection, deterministic engineering proposals, isolated Composer resolution and bounded Composer manifest/lock apply/recovery. **New raw Laravel creation is available as a bounded workflow. Existing-app dependency installation/configuration and additional foundations remain incomplete.** See [the backlog](https://github.com/boncanca/LaravelSetupUtility/issues) for the remaining work.
 
 Run `php bin/laravel-setup inspect /path/to/project` to print the canonical project root and PHP/Laravel constraints declared in `composer.json` as JSON. Inspection reads only that manifest; it does not execute application code or report installed versions.
 
@@ -37,6 +37,19 @@ The recipe pins `laravel/laravel` skeleton 13.11.0, resolves and retains Compose
 A private sibling directory holds staging; the destination appears only after checks pass. Existing paths, including symlinks, are refused. Failed/timeout runs clean their owned stage and do not publish; abrupt host/process termination may leave a private sibling stage requiring manual removal. Cooperating new-project runs use an external lock. Arbitrary hostile filesystem changes and power-loss durability are outside this guarantee. The parent directory must be trusted.
 
 Dependency solving is time-sensitive: the pinned skeleton and saved final lock identify the generated app; this is not byte-identical generation across future resolutions. Composer/PHP and upstream dependency code are trusted prerequisites. Subprocess output is suppressed to avoid exposing secrets; errors name the failed step. At present this recipe supports only raw Laravel, with no existing-app conversion.
+
+## Opt-in strict engineering for new applications
+
+```sh
+php bin/laravel-setup new /path/to/new-app --engineering=strict
+php bin/laravel-setup new /path/to/new-app --engineering=strict --apply
+```
+
+This deliberately retains Essentials as a runtime dependency plus Pest, Pint, maximum-level Larastan/PHPStan (app/routes/database), Rector with Laravel quality rules, reviewed configurations, ENGINEERING.md, an AGENTS.md appendix and a CI workflow. Existing upstream PHPUnit tests, Composer test script and agent instructions are preserved. No Boost installation is implied; the project appendix supersedes upstream bootstrap suggestions to auto-install agent tooling.
+
+The preset disables global model unguarding, enables strict models/immutable dates/test isolation and limits forced HTTPS to production. Auto eager loading, aggressive prefetch and default-password policy changes are disabled. `composer check` checks Pint, static analysis, Rector dry-run and Pest without source rewrites. `composer fix` deliberately rewrites first-party source and runs once inside the new private scaffold, followed by all checks. A behavioral test asserts guarded/strict models and immutable dates; no blanket coverage percentage or final-class rule is imposed.
+
+The new-app preset explicitly unlocks selected packages including the scaffold PHPUnit requirement so Composer can choose a Pest-compatible version. It does not use broad `-W` upgrades. Automatic Composer lifecycle scripts/plugins stay disabled; only the recipe-owned `fix` and `check` scripts execute deliberately. This workflow does not retrofit an existing app or migrate existing PHPUnit suites. Runtime/tool compatibility is qualified per release, not inferred from solver success.
 
 ## Read-only runtime diagnostics
 
