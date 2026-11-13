@@ -27,7 +27,9 @@
       "@php tests/resolve.php",
       "@php tests/resolve-real.php",
       "@php tests/transaction.php",
-      "@php tests/doctor.php"
+      "@php tests/doctor.php",
+      "@php tests/new.php",
+      "@php tests/new-cli.php"
     ],
     "build": "@php -d phar.readonly=0 vendor/bin/box compile"
   },
