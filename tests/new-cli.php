@@ -19,6 +19,11 @@ try {
     }
     [$exit, $out, $err] = $run([$root, '--apply']);
     if ($exit !== 1 || $out !== '' || !str_contains($err, 'Destination already exists')) { throw new RuntimeException('Existing destination must fail before launching Composer.'); }
+    [$exit, $out, $err] = $run([$root.'/strict app', '--engineering=strict']);
+    $plan = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+    if ($exit !== 0 || $err !== '' || $plan['engineering'] !== 'strict' || !in_array('nunomaduro/essentials', $plan['engineering_packages'], true) || count(scandir($root)) !== 2) { throw new RuntimeException('Strict preview must show retained runtime packages without writes.'); }
+    [$exit, $out, $err] = $run([$root.'/invalid', '--engineering=unknown']);
+    if ($exit !== 1 || $out !== '' || !str_contains($err, 'none or strict')) { throw new RuntimeException('Unknown preset must fail before mutation.'); }
     echo "PASS: new CLI preview and existing destination refusal.\n";
 } finally {
     rmdir($root);

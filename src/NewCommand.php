@@ -23,6 +23,7 @@ final class NewCommand extends Command
     {
         $this->setDescription('Preview new raw Laravel creation; --apply installs upstream code and verifies it in staging.')
             ->addArgument('path', InputArgument::REQUIRED, 'New application destination inside an existing directory')
+            ->addOption('engineering', null, InputOption::VALUE_REQUIRED, 'none or strict (retains Essentials/Pest/Pint/Larastan/Rector/constitution/CI)', 'none')
             ->addOption('apply', null, InputOption::VALUE_NONE, 'Install dependencies, execute upstream boot/tests, then publish; no migrations');
     }
 
@@ -30,7 +31,7 @@ final class NewCommand extends Command
     {
         try {
             $service = new NewProject(phpCommand: [PHP_BINARY, '-c', php_ini_loaded_file() ?: '']);
-            $result = $input->getOption('apply') ? $service->create($input->getArgument('path')) : $service->plan($input->getArgument('path'));
+            $result = $input->getOption('apply') ? $service->create($input->getArgument('path'), $input->getOption('engineering')) : $service->plan($input->getArgument('path'), $input->getOption('engineering'));
             $output->writeln(json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), OutputInterface::OUTPUT_RAW);
 
             return Command::SUCCESS;

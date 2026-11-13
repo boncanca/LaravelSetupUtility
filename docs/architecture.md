@@ -72,3 +72,10 @@ Broader platform/Git inspection, tool configuration, transactional dependency in
 - https://github.com/box-project/box/blob/main/doc/configuration.md
 - https://laravel-zero.com/docs/distribute-as-a-phar-archive
 - https://laravel.com/docs/13.x/prompts
+
+
+## Superseding new-project increment — 13 November 2026
+
+`new <path>` previews the fixed raw Laravel recipe, and `--apply` installs upstream dependencies with automatic Composer scripts/plugins disabled inside a private sibling stage. An atomically reserved destination receives the app only after boot/routes/tests pass. Failed runs clean their own stage; abrupt termination and hostile filesystem mutation remain outside cleanup guarantees. A local environment/key is retained, with file sessions/cache and synchronous queues; no database migration or frontend installation runs.
+
+The optional `--engineering=strict` retains Essentials and selected dev tools, preserves upstream PHPUnit tests and agent instructions, and emits ENGINEERING.md, scoped static analysis/format/refactor configurations and CI. It deliberately executes recipe-owned formatting/check scripts only on new scaffolds. A scoped selected-package update can choose a Pest-compatible PHPUnit version. Existing-app installation/configuration remains incomplete. See implementation-plan.md and the README for current supported choices.
