@@ -2,7 +2,7 @@
 
 Use Symfony Console and Box directly. Laravel Zero is a viable Artisan-based alternative, but its application/container/config conventions add no benefit to this packaging increment. Add Symfony Process when execution needs it and Laravel Prompts when interactive selection exists. Do not install dependencies solely for later phases.
 
-The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`, `plan <path>` and `check-plan <path> <plan-file>`. It cannot create or configure Laravel applications yet. Version `0.1.0-dev` is a development identifier, not a published release.
+The source CLI exposes Symfony's help, list, completion and version commands plus read-only `inspect <path>`, `plan <path>` and `check-plan <path> <plan-file>`. `create <path>` adds a distinct new-application journey using the official Laravel skeleton; selectable engineering configuration remains pending. See [create.md](create.md). Version `0.1.0-dev` is a development identifier, not a published release.
 
 Box is development-only. It includes production dependencies using Composer metadata. Explicit alias and timestamp remove two sources of build variation. Byte reproducibility is checked by two builds in the same environment; this does not establish cross-platform or cross-PHP byte identity.
 
@@ -10,7 +10,7 @@ Box is development-only. It includes production dependencies using Composer meta
 
 Initial qualified environment: Ubuntu 24.04, PHP 8.3.6. PHP 8.3+ is required by the manifest; other operating systems and PHP versions remain unqualified until tested. Native Windows and WSL must be qualified separately.
 
-Running the PHAR requires PHP CLI with Phar and iconv. Building additionally needs tokenizer, mbstring and the locked build dependencies' required extensions. Composer needs HTTPS/decompression support; enable OpenSSL, curl and zlib or provide equivalent Composer-supported transport/extraction tools. Build with `phar.readonly=0`. Use Composer 2; this increment was tested with 2.8.12. Commit and install from composer.lock; do not update dependencies during reproduction.
+Running the PHAR requires PHP CLI with Phar and iconv. Building additionally needs tokenizer, mbstring and the locked build dependencies' required extensions. Composer needs HTTPS/decompression support; enable OpenSSL, curl and zlib or provide equivalent Composer-supported transport/extraction tools. Build with `phar.readonly=0`. Use Composer 2; the historical packaging baseline used 2.8.12. Current cloud/CI use the patched Composer version pinned in [cloud-environment.md](cloud-environment.md) and the workflow. Commit and install from composer.lock; do not update dependencies during reproduction.
 
 ```
 composer install --no-interaction
@@ -22,7 +22,7 @@ php tests/plan.php "$PWD/build/laravel-setup.phar"
 php tests/package.php
 ```
 
-The PHAR can be moved away from source/vendor and run with PHP. It requires no Composer installation at runtime. It does not contain PHP itself.
+The PHAR can be moved away from source/vendor and run with PHP. Inspection/planning require no Composer installation at runtime; `create` and `resolve-plan` require an external Composer 2 executable. It does not contain PHP itself.
 
 ## Acceptance boundary
 
@@ -72,3 +72,10 @@ Broader platform/Git inspection, tool configuration, transactional dependency in
 - https://github.com/box-project/box/blob/main/doc/configuration.md
 - https://laravel-zero.com/docs/distribute-as-a-phar-archive
 - https://laravel.com/docs/13.x/prompts
+
+
+## Superseding new-project increment — 13 November 2026
+
+`new <path>` previews the fixed raw Laravel recipe, and `--apply` installs upstream dependencies with automatic Composer scripts/plugins disabled inside a private sibling stage. An atomically reserved destination receives the app only after boot/routes/tests pass. Failed runs clean their own stage; abrupt termination and hostile filesystem mutation remain outside cleanup guarantees. A local environment/key is retained, with file sessions/cache and synchronous queues; no database migration or frontend installation runs.
+
+The optional `--engineering=strict` retains Essentials and selected dev tools, preserves upstream PHPUnit tests and agent instructions, and emits ENGINEERING.md, scoped static analysis/format/refactor configurations and CI. It deliberately executes recipe-owned formatting/check scripts only on new scaffolds. A scoped selected-package update can choose a Pest-compatible PHPUnit version. Existing-app installation/configuration remains incomplete. See implementation-plan.md and the README for current supported choices.

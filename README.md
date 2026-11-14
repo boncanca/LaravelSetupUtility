@@ -4,7 +4,7 @@ A standalone, disposable Laravel ecosystem configurator. The utility runs outsid
 
 ## Current status
 
-The CLI now supports read-only inspection and diagnostics, deterministic package planning, isolated Composer dependency resolution, retained private resolution bundles, bounded `composer.json`/`composer.lock` apply and recovery, and creation of new raw Laravel applications. New applications can opt into a strict engineering preset. **Existing-app dependency installation and engineering configuration, additional application foundations, and the full MVP remain incomplete.** See the [backlog](https://github.com/boncanca/LaravelSetupUtility/issues) and [implementation plan](docs/implementation-plan.md).
+The CLI supports both new-application workflows below, read-only inspection and diagnostics, deterministic package planning, isolated Composer dependency resolution, retained private resolution bundles, bounded `composer.json`/`composer.lock` apply and recovery, and creation of new raw Laravel applications. New applications can opt into a strict engineering preset. **Existing-app dependency installation and engineering configuration, additional application foundations, and the full MVP remain incomplete.** See the [backlog](https://github.com/boncanca/LaravelSetupUtility/issues) and [implementation plan](docs/implementation-plan.md).
 
 ## Feature checklist
 
@@ -20,6 +20,7 @@ The CLI now supports read-only inspection and diagnostics, deterministic package
 
 ### New applications
 
+- [x] `create <path>` creates the separately qualified Linux Laravel 12 application with HTTP smoke and cancellation checks.
 - [x] `new <path>` previews creation of a fixed raw Laravel skeleton; `new <path> --apply` creates and verifies it in private staging before publication.
 - [x] The new-app workflow disables Composer lifecycle scripts/plugins, prepares a private local environment, and checks application boot, routes, and upstream tests before publishing. It does not run migrations or install/build frontend assets.
 - [x] `--engineering=strict` is an opt-in preset for new applications. It deliberately retains Essentials and selected Pest, Pint, Larastan/PHPStan and Rector tools, adds reviewed configuration, `ENGINEERING.md`, an `AGENTS.md` appendix and CI, and runs its explicit formatting/check steps on the private scaffold.
@@ -33,6 +34,17 @@ The CLI now supports read-only inspection and diagnostics, deterministic package
 - [ ] Temporary browser UI, tenancy/SaaS configuration, or AI recommendations.
 
 Checked items describe implemented bounded workflows, not universal compatibility. See command limits and verification notes below; successful dependency solving or file-only apply does not mean an application is fully ready.
+
+## New-application entry points
+
+| Command | Application | Scope |
+| --- | --- | --- |
+| `new <path>` / `new <path> --apply` | Pinned Laravel 13 skeleton 13.11.0 | Read-only preview by default; optional `--engineering=strict`; no database migration or frontend build |
+| `create <path>` | Pinned Laravel 12 skeleton v12.12.2 | Qualified Linux/PHP 8.3–8.4 workflow with HTTP smoke tests, process-session cancellation and atomic no-clobber publication; no engineering preset |
+
+Both workflows are now included in this integration. They preserve separately qualified platform and verification guarantees; they are not aliases. Prefer `new` for the Laravel 13 engineering preset. Use `create` only within its [documented Linux/filesystem/runtime requirements](docs/create.md). Future shared-runner consolidation must preserve both workflows' safety and verification guarantees. Neither command modifies an existing application.
+
+The Linux creator also includes [container development tooling](docs/cloud-environment.md), isolated quality tools, cancellation/failure fixtures and an explicit upstream integration harness. No container or remote service runs automatically during ordinary CLI use.
 
 ## Inspect, plan, resolve, and recover
 
@@ -68,7 +80,7 @@ php bin/laravel-setup new /path/to/strict-app --engineering=strict
 php bin/laravel-setup new /path/to/strict-app --engineering=strict --apply
 ```
 
-The raw recipe uses a pinned Laravel skeleton and resolves upstream dependencies in a private sibling stage. Automatic Composer lifecycle scripts/plugins are disabled. The workflow creates a private local environment/key and verifies application boot, routes and upstream tests before publishing to an absent destination. It does not run migrations, install/build frontend assets, create a Git repository, deploy, or retrofit an existing application. Dependency resolution can change over time; the final lock identifies the generated dependency graph but does not make future resolutions byte-identical. Composer, PHP and upstream dependency code are trusted prerequisites. Normal failures clean the stage; abrupt termination or hostile filesystem changes can fall outside cleanup guarantees.
+The raw recipe uses a pinned Laravel skeleton and resolves upstream dependencies in a private sibling stage. Automatic Composer lifecycle scripts/plugins are disabled. The workflow creates a private local environment/key and verifies application boot, routes and upstream tests before publishing to an absent destination. It does not run migrations, install/build frontend assets, create a Git repository, deploy, or retrofit an existing application. Dependency resolution can change over time; the final lock identifies the generated dependency graph but does not make future resolutions byte-identical. Composer, PHP and upstream dependency code are trusted prerequisites. Verification-created runtime caches are cleared from the private stage before publication, preserving upstream `.gitignore` scaffolding. Normal failures clean the stage; abrupt termination or hostile filesystem changes can fall outside cleanup guarantees.
 
 ### Strict engineering preset
 
@@ -78,7 +90,7 @@ The preset is only for newly staged raw applications. It intentionally retains E
 
 ## Development and packaging tests
 
-Use PHP 8.3+ and Composer 2. The currently documented utility qualification is Ubuntu 24.04 with PHP 8.3.6; other platforms remain unverified.
+Use PHP 8.3+ and Composer 2. Utility evidence includes Ubuntu 24.04/PHP 8.3.6 and Debian 13/PHP 8.4.24. The Linux creator has additional constraints documented separately; native Windows, macOS and network-filesystem support are not qualified.
 
 ```sh
 composer install --no-interaction

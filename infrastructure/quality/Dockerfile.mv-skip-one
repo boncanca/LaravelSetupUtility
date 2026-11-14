@@ -1,0 +1,8 @@
+# A local regression model, not an actual GNU coreutils 9.4 distribution.
+ARG DEVELOPMENT_IMAGE=laravel-setup-dev:php84
+FROM ${DEVELOPMENT_IMAGE}
+# The included Alpine image has /usr/bin/mv -> /bin/mv -> coreutils.
+# Unlink only this alias; replacing its bind target would replace all coreutils.
+RUN /bin/busybox rm /usr/bin/mv
+COPY mv-skip-one.php /usr/bin/mv
+RUN /bin/busybox chmod 0755 /usr/bin/mv
