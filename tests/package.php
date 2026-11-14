@@ -15,7 +15,7 @@ foreach (new RecursiveIteratorIterator($archive) as $file) {
     if (preg_match('~^vendor/([^/]+/[^/]+)/~', $name, $match) && !str_starts_with($name, 'vendor/composer/') && !in_array($match[1], $production, true)) {
         throw new RuntimeException('Non-production package in archive: '.$match[1]);
     }
-    if (preg_match('~^(tests/|build/|\.git/|\.env(?:$|\.))~', $name)) {
+    if (preg_match('~^(tests/|build/|infrastructure/|phpstan-create\.neon$|\.git/|\.env(?:$|\.))~', $name)) {
         throw new RuntimeException('Unexpected archive member: '.$name);
     }
 }

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+# Run from anywhere under /workspace. The platform Docker proxy defaults apply.
+workspace=${LSU_WORKSPACE:-/workspace}
+runtime_dir=${LSU_RUNTIME_DIR:-$workspace/work/environment}
+temporary_dir=${LSU_TMPDIR:-$workspace/work/tmp}
+mkdir -p "$runtime_dir/composer-home" "$temporary_dir"
+chmod 700 "$runtime_dir/composer-home" "$temporary_dir"
+exec env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH \
+    docker --host=unix:///var/run/docker.sock run --rm --init \
+    --user "$(id -u):$(id -g)" \
+    --mount "type=bind,src=$workspace,dst=$workspace" \
+    --mount type=bind,src=/etc/ssl/certs/ca-certificates.crt,dst=/run/ca-certificates.crt,readonly \
+    -e COMPOSER_CAFILE=/run/ca-certificates.crt \
+    -e SSL_CERT_FILE=/run/ca-certificates.crt \
+    -e "COMPOSER_HOME=$runtime_dir/composer-home" \
+    -e "TMPDIR=$temporary_dir" \
+    --workdir "$PWD" laravel-setup-dev:php84 "$@"

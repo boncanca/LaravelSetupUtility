@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+ca_bundle=${CODEX_PROXY_CERT:-/etc/ssl/certs/ca-certificates.crt}
+exec env -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH \
+    docker --host=unix:///var/run/docker.sock build \
+    --secret "id=proxy_ca,src=$ca_bundle" \
+    --file "$root/infrastructure/cloud/Dockerfile" \
+    --tag laravel-setup-dev:php84 "$root/infrastructure/cloud"
